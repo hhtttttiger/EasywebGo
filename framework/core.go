@@ -1,74 +1,85 @@
 package framework
 
 import (
+	"log"
 	"net/http"
 	"strings"
 )
 
+// Core represent core struct
 type Core struct {
-	router map[string]map[string]ControllerHandler
+	router map[string]*Tree // all routers
 }
 
+// 初始化core结构
 func NewCore() *Core {
-	getRouter := map[string]ControllerHandler{}
-	postRouter := map[string]ControllerHandler{}
-	putRouter := map[string]ControllerHandler{}
-	deleteRouter := map[string]ControllerHandler{}
-
-	router := map[string]map[string]ControllerHandler{}
-	router["GET"] = getRouter
-	router["POST"] = postRouter
-	router["PUT"] = putRouter
-	router["DELETE"] = deleteRouter
-
-	return &Core{}
+	// 初始化路由
+	router := map[string]*Tree{}
+	router["GET"] = NewTree()
+	router["POST"] = NewTree()
+	router["PUT"] = NewTree()
+	router["DELETE"] = NewTree()
+	return &Core{router: router}
 }
 
-func (c *Core) Get(url string, hanler ControllerHandler) {
-	upperUrl := strings.ToUpper(url)
-	c.router["GET"][upperUrl] = hanler
+// === http method wrap
+
+// 匹配GET 方法, 增加路由规则
+func (c *Core) Get(url string, handler ControllerHandler) {
+	if err := c.router["GET"].AddRouter(url, handler); err != nil {
+		log.Fatal("add router error: ", err)
+	}
 }
 
-func (c *Core) Post(url string, hanler ControllerHandler) {
-	upperUrl := strings.ToUpper(url)
-	c.router["POST"][upperUrl] = hanler
+// 匹配POST 方法, 增加路由规则
+func (c *Core) Post(url string, handler ControllerHandler) {
+	if err := c.router["POST"].AddRouter(url, handler); err != nil {
+		log.Fatal("add router error: ", err)
+	}
 }
 
-func (c *Core) Put(url string, hanler ControllerHandler) {
-	upperUrl := strings.ToUpper(url)
-	c.router["PUT"][upperUrl] = hanler
+// 匹配PUT 方法, 增加路由规则
+func (c *Core) Put(url string, handler ControllerHandler) {
+	if err := c.router["PUT"].AddRouter(url, handler); err != nil {
+		log.Fatal("add router error: ", err)
+	}
 }
 
-func (c *Core) Delete(url string, hanler ControllerHandler) {
-	upperUrl := strings.ToUpper(url)
-	c.router["DELETE"][upperUrl] = hanler
+// 匹配DELETE 方法, 增加路由规则
+func (c *Core) Delete(url string, handler ControllerHandler) {
+	if err := c.router["DELETE"].AddRouter(url, handler); err != nil {
+		log.Fatal("add router error: ", err)
+	}
 }
 
-func (c *Core) FindRouterByRequest(request *http.Request) ControllerHandler {
-	uri := request.URL.RawPath
+// ==== http method wrap end
+
+func (c *Core) Group(prefix string) IGroup {
+	return NewGroup(c, prefix)
+}
+
+// 匹配路由，如果没有匹配到，返回nil
+func (c *Core) FindRouteByRequest(request *http.Request) ControllerHandler {
+	// uri 和 method 全部转换为大写，保证大小写不敏感
+	uri := request.URL.Path
 	method := request.Method
-
-	upperUri := strings.ToUpper(uri)
 	upperMethod := strings.ToUpper(method)
 
-	var mehtodHandlers map[string]ControllerHandler
-	var ok bool
-	if mehtodHandlers, ok = c.router[upperUri]; !ok {
-		return nil
+	// 查找第一层map
+	if methodHandlers, ok := c.router[upperMethod]; ok {
+		return methodHandlers.FindHandler(uri)
 	}
-
-	var handler ControllerHandler
-	if handler, ok = mehtodHandlers[upperMethod]; !ok {
-		return nil
-	}
-
-	return handler
+	return nil
 }
 
-func (c *Core) ServeHTTP(response http.ResponseWriter, request *http.Request) { // TODO
+// 所有请求都进入这个函数, 这个函数负责路由分发
+func (c *Core) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+
+	// 封装自定义context
 	ctx := NewContext(request, response)
 
-	router := c.FindRouterByRequest(request)
+	// 寻找路由
+	router := c.FindRouteByRequest(request)
 	if router == nil {
 		// 如果没有找到，这里打印日志
 		ctx.Json(404, "not found")

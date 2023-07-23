@@ -7,10 +7,10 @@ import (
 
 // 字典树
 type node struct {
-	isLast  bool
-	segment string
-	handler ControllerHandler
-	childs  []*node
+	isLast   bool
+	segment  string
+	handlers []ControllerHandler
+	childs   []*node
 }
 
 // 根节点

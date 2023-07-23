@@ -79,15 +79,17 @@ func (c *Core) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	ctx := NewContext(request, response)
 
 	// 寻找路由
-	router := c.FindRouteByRequest(request)
-	if router == nil {
+	handlers := c.FindRouteByRequest(request)
+	if handlers == nil {
 		// 如果没有找到，这里打印日志
 		ctx.Json(404, "not found")
 		return
 	}
 
+	ctx.SetHandels(handlers)
+
 	// 调用路由函数，如果返回err 代表存在内部错误，返回500状态码
-	if err := router(ctx); err != nil {
+	if err := handlers(ctx); err != nil {
 		ctx.Json(500, "inner error")
 		return
 	}

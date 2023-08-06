@@ -3,7 +3,8 @@ package controllers
 import "ASPGo/framework"
 
 func FooControllerHandler(ctx *framework.Context) error {
-	return ctx.Json(200, map[string]interface{}{
+	ctx.SetOkStatus().Json(map[string]interface{}{
 		"code": 0,
 	})
+	return nil
 }

@@ -1,165 +1,268 @@
 package framework
 
 import (
-	"encoding/json"
-	"encoding/xml"
-	"fmt"
-	"html/template"
-	"net/http"
-	"net/url"
+	"mime/multipart"
+
+	"github.com/spf13/cast"
 )
 
-// IResponse代表返回方法
-type IResponse interface {
-	// Json输出
-	Json(obj interface{}) IResponse
+// const defaultMultipartMemory = 32 << 20 // 32 MB
 
-	// Jsonp输出
-	Jsonp(obj interface{}) IResponse
+// 代表请求包含的方法
+type IRequest interface {
+	// 请求地址url中带的参数
+	// 形如: foo.com?a=1&b=bar&c[]=bar
+	DefaultQueryInt(key string, def int) (int, bool)
+	DefaultQueryInt64(key string, def int64) (int64, bool)
+	DefaultQueryFloat64(key string, def float64) (float64, bool)
+	DefaultQueryFloat32(key string, def float32) (float32, bool)
+	DefaultQueryBool(key string, def bool) (bool, bool)
+	DefaultQueryString(key string, def string) (string, bool)
+	DefaultQueryStringSlice(key string, def []string) ([]string, bool)
 
-	//xml输出
-	Xml(obj interface{}) IResponse
+	// 路由匹配中带的参数
+	// 形如 /book/:id
+	DefaultParamInt(key string, def int) (int, bool)
+	DefaultParamInt64(key string, def int64) (int64, bool)
+	DefaultParamFloat64(key string, def float64) (float64, bool)
+	DefaultParamFloat32(key string, def float32) (float32, bool)
+	DefaultParamBool(key string, def bool) (bool, bool)
+	DefaultParamString(key string, def string) (string, bool)
+	DefaultParam(key string) interface{}
 
-	// html输出
-	Html(file string, obj interface{}) IResponse
+	// form表单中带的参数
+	DefaultFormInt(key string, def int) (int, bool)
+	DefaultFormInt64(key string, def int64) (int64, bool)
+	DefaultFormFloat64(key string, def float64) (float64, bool)
+	DefaultFormFloat32(key string, def float32) (float32, bool)
+	DefaultFormBool(key string, def bool) (bool, bool)
+	DefaultFormString(key string, def string) (string, bool)
+	DefaultFormStringSlice(key string, def []string) ([]string, bool)
+	DefaultFormFile(key string) (*multipart.FileHeader, error)
+	DefaultForm(key string) interface{}
 
-	// string
-	Text(format string, values ...interface{}) IResponse
+	// json body
+	BindJson(obj interface{}) error
 
-	// 重定向
-	Redirect(path string) IResponse
+	// xml body
+	BindXml(obj interface{}) error
+
+	// 其他格式
+	GetRawData() ([]byte, error)
+
+	// 基础信息
+	Uri() string
+	Method() string
+	Host() string
+	ClientIp() string
 
 	// header
-	SetHeader(key string, val string) IResponse
+	Headers() map[string]string
+	Header(key string) (string, bool)
 
-	// Cookie
-	SetCookie(key string, val string, maxAge int, path, domain string, secure, httpOnly bool) IResponse
-
-	// 设置状态码
-	SetStatus(code int) IResponse
-
-	// 设置200状态
-	SetOkStatus() IResponse
+	// cookie
+	Cookies() map[string]string
+	Cookie(key string) (string, bool)
 }
 
-// Jsonp输出
-func (ctx *Context) Jsonp(obj interface{}) IResponse {
-	// 获取请求参数callback
-	callbackFunc, _ := ctx.QueryString("callback", "callback_function")
-	ctx.SetHeader("Content-Type", "application/javascript")
-	// 输出到前端页面的时候需要注意下进行字符过滤，否则有可能造成xss攻击
-	callback := template.JSEscapeString(callbackFunc)
-
-	// 输出函数名
-	_, err := ctx.responseWriter.Write([]byte(callback))
-	if err != nil {
-		return ctx
+// 获取请求地址中所有参数
+func (ctx *Context) QueryAll() map[string][]string {
+	if ctx.request != nil {
+		return map[string][]string(ctx.request.URL.Query())
 	}
-	// 输出左括号
-	_, err = ctx.responseWriter.Write([]byte("("))
-	if err != nil {
-		return ctx
-	}
-	// 数据函数参数
-	ret, err := json.Marshal(obj)
-	if err != nil {
-		return ctx
-	}
-	_, err = ctx.responseWriter.Write(ret)
-	if err != nil {
-		return ctx
-	}
-	// 输出右括号
-	_, err = ctx.responseWriter.Write([]byte(")"))
-	if err != nil {
-		return ctx
-	}
-	return ctx
+	return map[string][]string{}
 }
 
-// xml输出
-func (ctx *Context) Xml(obj interface{}) IResponse {
-	byt, err := xml.Marshal(obj)
-	if err != nil {
-		return ctx.SetStatus(http.StatusInternalServerError)
+// 请求地址url中带的参数
+// 形如: foo.com?a=1&b=bar&c[]=bar
+
+// 获取Int类型的请求参数
+func (ctx *Context) DefaultQueryInt(key string, def int) (int, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			// 使用cast库将string转换为Int
+			return cast.ToInt(vals[0]), true
+		}
 	}
-	ctx.SetHeader("Content-Type", "application/html")
-	ctx.responseWriter.Write(byt)
-	return ctx
+	return def, false
 }
 
-// html输出
-func (ctx *Context) Html(file string, obj interface{}) IResponse {
-	// 读取模版文件，创建template实例
-	t, err := template.New("output").ParseFiles(file)
-	if err != nil {
-		return ctx
+func (ctx *Context) DefaultQueryInt64(key string, def int64) (int64, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToInt64(vals[0]), true
+		}
 	}
-	// 执行Execute方法将obj和模版进行结合
-	if err := t.Execute(ctx.responseWriter, obj); err != nil {
-		return ctx
+	return def, false
+}
+
+func (ctx *Context) DefaultQueryFloat64(key string, def float64) (float64, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToFloat64(vals[0]), true
+		}
 	}
-
-	ctx.SetHeader("Content-Type", "application/html")
-	return ctx
+	return def, false
 }
 
-// string
-func (ctx *Context) Text(format string, values ...interface{}) IResponse {
-	out := fmt.Sprintf(format, values...)
-	ctx.SetHeader("Content-Type", "application/text")
-	ctx.responseWriter.Write([]byte(out))
-	return ctx
-}
-
-// 重定向
-func (ctx *Context) Redirect(path string) IResponse {
-	http.Redirect(ctx.responseWriter, ctx.request, path, http.StatusMovedPermanently)
-	return ctx
-}
-
-// header
-func (ctx *Context) SetHeader(key string, val string) IResponse {
-	ctx.responseWriter.Header().Add(key, val)
-	return ctx
-}
-
-// Cookie
-func (ctx *Context) SetCookie(key string, val string, maxAge int, path string, domain string, secure bool, httpOnly bool) IResponse {
-	if path == "" {
-		path = "/"
+func (ctx *Context) DefaultQueryFloat32(key string, def float32) (float32, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToFloat32(vals[0]), true
+		}
 	}
-	http.SetCookie(ctx.responseWriter, &http.Cookie{
-		Name:     key,
-		Value:    url.QueryEscape(val),
-		MaxAge:   maxAge,
-		Path:     path,
-		Domain:   domain,
-		SameSite: 1,
-		Secure:   secure,
-		HttpOnly: httpOnly,
-	})
-	return ctx
+	return def, false
 }
 
-// 设置状态码
-func (ctx *Context) SetStatus(code int) IResponse {
-	ctx.responseWriter.WriteHeader(code)
-	return ctx
-}
-
-// 设置200状态
-func (ctx *Context) SetOkStatus() IResponse {
-	ctx.responseWriter.WriteHeader(http.StatusOK)
-	return ctx
-}
-
-func (ctx *Context) Json(obj interface{}) IResponse {
-	byt, err := json.Marshal(obj)
-	if err != nil {
-		return ctx.SetStatus(http.StatusInternalServerError)
+func (ctx *Context) DefaultQueryBool(key string, def bool) (bool, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToBool(vals[0]), true
+		}
 	}
-	ctx.SetHeader("Content-Type", "application/json")
-	ctx.responseWriter.Write(byt)
-	return ctx
+	return def, false
+}
+
+func (ctx *Context) DefaultQueryString(key string, def string) (string, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return vals[0], true
+		}
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultQueryStringSlice(key string, def []string) ([]string, bool) {
+	params := ctx.QueryAll()
+	if vals, ok := params[key]; ok {
+		return vals, true
+	}
+	return def, false
+}
+
+// 路由匹配中带的参数
+// 形如 /book/:id
+func (ctx *Context) DefaultParamInt(key string, def int) (int, bool) {
+	if val := ctx.HadeParam(key); val != nil {
+		// 通过cast进行类型转换
+		return cast.ToInt(val), true
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultParamInt64(key string, def int64) (int64, bool) {
+	if val := ctx.HadeParam(key); val != nil {
+		return cast.ToInt64(val), true
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultParamFloat64(key string, def float64) (float64, bool) {
+	if val := ctx.HadeParam(key); val != nil {
+		return cast.ToFloat64(val), true
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultParamFloat32(key string, def float32) (float32, bool) {
+	if val := ctx.HadeParam(key); val != nil {
+		return cast.ToFloat32(val), true
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultParamBool(key string, def bool) (bool, bool) {
+	if val := ctx.HadeParam(key); val != nil {
+		return cast.ToBool(val), true
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultParamString(key string, def string) (string, bool) {
+	if val := ctx.HadeParam(key); val != nil {
+		return cast.ToString(val), true
+	}
+	return def, false
+}
+
+// 获取路由参数
+func (ctx *Context) HadeParam(key string) interface{} {
+	if ctx.params != nil {
+		if val, ok := ctx.params[key]; ok {
+			return val
+		}
+	}
+	return nil
+}
+
+func (ctx *Context) FormAll() map[string][]string {
+	if ctx.request != nil {
+		ctx.request.ParseForm()
+		return map[string][]string(ctx.request.PostForm)
+	}
+	return map[string][]string{}
+}
+
+func (ctx *Context) DefaultFormInt64(key string, def int64) (int64, bool) {
+	params := ctx.FormAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToInt64(vals[0]), true
+		}
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultFormFloat64(key string, def float64) (float64, bool) {
+	params := ctx.FormAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToFloat64(vals[0]), true
+		}
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultFormFloat32(key string, def float32) (float32, bool) {
+	params := ctx.FormAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToFloat32(vals[0]), true
+		}
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultFormBool(key string, def bool) (bool, bool) {
+	params := ctx.FormAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return cast.ToBool(vals[0]), true
+		}
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultFormStringSlice(key string, def []string) ([]string, bool) {
+	params := ctx.FormAll()
+	if vals, ok := params[key]; ok {
+		return vals, true
+	}
+	return def, false
+}
+
+func (ctx *Context) DefaultForm(key string) interface{} {
+	params := ctx.FormAll()
+	if vals, ok := params[key]; ok {
+		if len(vals) > 0 {
+			return vals[0]
+		}
+	}
+	return nil
 }

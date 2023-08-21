@@ -22,18 +22,41 @@ type Context struct {
 	index    int // 当前请求调用到调用链的哪个节点
 
 	params map[string]string // url路由匹配的参数
+
+	container Container //容器
 }
 
 // NewContext 初始化一个Context
-func NewContext(r *http.Request, w http.ResponseWriter) *Context {
+func NewContext(r *http.Request, w http.ResponseWriter, container Container) *Context {
 	return &Context{
 		request:        r,
 		responseWriter: w,
 		ctx:            r.Context(),
 		writerMux:      &sync.Mutex{},
 		index:          -1,
+
+		container: container,
 	}
 }
+
+// #region base function
+// context 实现 container 的几个封装
+// 实现 make 的封装
+func (ctx *Context) Make(key string) (interface{}, error) {
+	return ctx.container.Make(key)
+}
+
+// 实现 mustMake 的封装
+func (ctx *Context) MustMake(key string) interface{} {
+	return ctx.container.MustMake(key)
+}
+
+// 实现 makenew 的封装
+func (ctx *Context) MakeNew(key string, params []interface{}) (interface{}, error) {
+	return ctx.container.MakeNew(key, params)
+}
+
+// #endregion
 
 // #region base function
 
@@ -71,9 +94,7 @@ func (ctx *Context) SetParams(params map[string]string) {
 func (ctx *Context) Next() error {
 	ctx.index++
 	if ctx.index < len(ctx.handlers) {
-		if err := ctx.handlers[ctx.index](ctx); err != nil {
-			return err
-		}
+		ctx.handlers[ctx.index](ctx)
 	}
 	return nil
 }

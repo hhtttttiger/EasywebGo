@@ -1,3 +1,3 @@
 package framework
 
-type ControllerHandler func(c *Context) error
+type ControllerHandler func(c *Context)

@@ -3,6 +3,7 @@ package main
 import (
 	"ASPGo/framework"
 	"ASPGo/middleware"
+	"ASPGo/provider/demo"
 	"ASPGo/route"
 	"context"
 	"log"
@@ -15,6 +16,9 @@ import (
 func main() {
 	core := framework.NewCore()
 	core.Use(middleware.Recovery())
+
+	//注册
+	core.Bind(&demo.DemoServiceProvider{})
 
 	route.RegisterRouter(core)
 	server := &http.Server{

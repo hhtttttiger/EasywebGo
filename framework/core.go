@@ -10,6 +10,7 @@ import (
 type Core struct {
 	router      map[string]*Tree    // all routers
 	middlewares []ControllerHandler // 从core这边设置的中间件
+	container   Container           //容器
 }
 
 // 初始化core结构
@@ -20,7 +21,11 @@ func NewCore() *Core {
 	router["POST"] = NewTree()
 	router["PUT"] = NewTree()
 	router["DELETE"] = NewTree()
-	return &Core{router: router}
+
+	return &Core{
+		router:    router,
+		container: NewHadeContainer(),
+	}
 }
 
 // 注册中间件
@@ -82,11 +87,21 @@ func (c *Core) FindRouteByRequest(request *http.Request) []ControllerHandler {
 	return nil
 }
 
+// core 实现 container 的绑定封装
+func (c *Core) Bind(provider ServiceProvider) error {
+	return c.container.Bind(provider)
+}
+
+// IsBind 关键字凭证是否已经绑定服务提供者
+func (c *Core) IsBind(key string) bool {
+	return c.container.IsBind(key)
+}
+
 // 所有请求都进入这个函数, 这个函数负责路由分发
 func (c *Core) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 
 	// 封装自定义context
-	ctx := NewContext(request, response)
+	ctx := NewContext(request, response, c.container)
 
 	// 寻找路由
 	handlers := c.FindRouteByRequest(request)

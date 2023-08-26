@@ -3,6 +3,7 @@ package main
 import (
 	"ASPGo/framework"
 	"ASPGo/middleware"
+	"ASPGo/provider/app"
 	"ASPGo/provider/demo"
 	"ASPGo/route"
 	"context"
@@ -19,6 +20,7 @@ func main() {
 
 	//注册
 	core.Bind(&demo.DemoServiceProvider{})
+	core.Bind(&app.HadeAppProvider{BaseFolder: "/tmp"})
 
 	route.RegisterRouter(core)
 	server := &http.Server{

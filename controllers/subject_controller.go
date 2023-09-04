@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"ASPGo/app/provider/demo"
 	"ASPGo/framework"
-	"ASPGo/provider/demo"
 	"fmt"
 )
 

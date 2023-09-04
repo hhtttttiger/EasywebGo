@@ -1,10 +1,10 @@
 package main
 
 import (
+	"ASPGo/app/provider/demo"
 	"ASPGo/framework"
-	"ASPGo/middleware"
-	"ASPGo/provider/app"
-	"ASPGo/provider/demo"
+	"ASPGo/framework/middleware"
+	"ASPGo/framework/provider/app"
 	"ASPGo/route"
 	"context"
 	"log"

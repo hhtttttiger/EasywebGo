@@ -87,6 +87,10 @@ func (c *Core) FindRouteByRequest(request *http.Request) []ControllerHandler {
 	return nil
 }
 
+func (c *Core) SetContainer(container Container) {
+	c.container = container
+}
+
 // core 实现 container 的绑定封装
 func (c *Core) Bind(provider ServiceProvider) error {
 	return c.container.Bind(provider)

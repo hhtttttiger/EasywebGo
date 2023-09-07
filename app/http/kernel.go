@@ -1,7 +1,6 @@
-package app
+package http
 
 import (
-	"ASPGo/app/http"
 	"ASPGo/framework"
 	"ASPGo/framework/middleware"
 )
@@ -12,7 +11,7 @@ func NewHttpEngine() (*framework.Core, error) {
 	core := framework.NewCore()
 	core.Use(middleware.Recovery())
 
-	http.RegisterRouter(core)
+	RegisterRouter(core)
 
 	// 返回绑定路由后的 Web 引擎
 	return core, nil

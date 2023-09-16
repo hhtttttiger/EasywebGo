@@ -3,6 +3,7 @@ package console
 import (
 	"ASPGo/framework"
 	"ASPGo/framework/cobra-1.7.0"
+	"ASPGo/framework/command"
 )
 
 // RunCommand  初始化根Command并运行

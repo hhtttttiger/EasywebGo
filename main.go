@@ -1,6 +1,7 @@
 package main
 
 import (
+	console "ASPGo/app/console/command"
 	"ASPGo/app/http"
 	"ASPGo/framework"
 	"ASPGo/framework/provider/app"
@@ -23,30 +24,4 @@ func main() {
 
 	// 运行root命令
 	console.RunCommand(container)
-
-	// core := framework.NewCore()
-	// core.Use(middleware.Recovery())
-
-	// //注册
-	// core.Bind(&demo.DemoServiceProvider{})
-	// core.Bind(&app.HadeAppProvider{BaseFolder: "/tmp"})
-
-	// route.RegisterRouter(core)
-	// server := &http.Server{
-	// 	Handler: core,
-	// 	Addr:    ":8888",
-	// }
-
-	// go func() {
-	// 	server.ListenAndServe()
-	// }()
-
-	// quit := make(chan os.Signal)
-	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	// <-quit
-
-	// // 调用Server.Shutdown graceful结束
-	// if err := server.Shutdown(context.Background()); err != nil {
-	// 	log.Fatal("Server Shutdown:", err)
-	// }
 }

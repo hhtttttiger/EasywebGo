@@ -5,6 +5,8 @@ import (
 	"ASPGo/app/http"
 	"ASPGo/framework"
 	"ASPGo/framework/provider/app"
+	"ASPGo/framework/provider/config"
+	"ASPGo/framework/provider/env"
 	"ASPGo/framework/provider/kernel"
 )
 
@@ -15,6 +17,8 @@ func main() {
 
 	// 绑定App服务提供者
 	container.Bind(&app.HadeAppProvider{})
+	container.Bind(&env.HadeEnvProvider{})
+	container.Bind(&config.HadeConfigProvider{})
 	// 后续初始化需要绑定的服务提供者...
 
 	// 将HTTP引擎初始化,并且作为服务提供者绑定到服务容器中

@@ -1,9 +1,9 @@
 package contract
 
 const (
-	EnvProduction  = "production" // 生产
-	EnvTesting     = "testing"    //测试
-	EnvDevelopment = "deveopment" //开发
+	EnvProduction  = "production"  // 生产
+	EnvTesting     = "testing"     //测试
+	EnvDevelopment = "development" //开发
 	EnvKey         = "hade:env"
 )
 

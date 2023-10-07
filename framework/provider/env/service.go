@@ -77,8 +77,8 @@ func NewHadeEnv(params ...interface{}) (interface{}, error) {
 	return hadeEnv, nil
 }
 
-func (env *HadeEnv) AppEnv(key string) string {
-	return env.Get(key)
+func (env *HadeEnv) AppEnv() string {
+	return env.Get("APP_ENV")
 }
 
 func (env *HadeEnv) Get(key string) string {

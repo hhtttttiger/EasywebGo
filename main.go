@@ -16,7 +16,7 @@ func main() {
 	container := framework.NewHadeContainer()
 
 	// 绑定App服务提供者
-	container.Bind(&app.HadeAppProvider{BaseFolder: "C:\\Users\\hhttt\\Desktop\\AspGo"})
+	container.Bind(&app.HadeAppProvider{BaseFolder: ".\\"})
 	container.Bind(&env.HadeEnvProvider{})
 	container.Bind(&config.HadeConfigProvider{})
 	// 后续初始化需要绑定的服务提供者...

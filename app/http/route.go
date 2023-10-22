@@ -1,7 +1,7 @@
 package http
 
 import (
-	"ASPGo/controllers"
+	"ASPGo/app/http/controllers"
 	"ASPGo/framework"
 )
 

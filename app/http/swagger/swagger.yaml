@@ -1,0 +1,22 @@
+basePath: /
+info:
+  contact:
+    email: yejianfeng
+    name: yejianfeng1
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/swaggo/swag
+  title: hade
+  version: "1.1"
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  BasicAuth:
+    type: basic
+swagger: "2.0"
+x-extension-openapi:
+  example: value on a json format

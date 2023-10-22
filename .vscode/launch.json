@@ -5,6 +5,7 @@
    
         "version": "0.2.0",
         "configurations": [
+
             {
                 "name": "Launch Package",
                 "type": "go",
@@ -13,8 +14,10 @@
                 "program": "${workspaceRoot}/main.go",
                 "cwd": "${workspaceRoot}",
                 "args": [
-                    "app",
-                    "start"
+                    // "app",
+                    // "start"
+                    "swagger",
+                    "gen"
                   ]
             },
        

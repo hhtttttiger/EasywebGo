@@ -6,4 +6,5 @@ import "ASPGo/framework/cobra-1.7.0"
 func AddKernelCommands(root *cobra.Command) {
 	// 挂载AppCommand命令
 	root.AddCommand(initAppCommand())
+	root.AddCommand(initSwaggerCommand())
 }

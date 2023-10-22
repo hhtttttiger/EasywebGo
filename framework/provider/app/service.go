@@ -16,6 +16,25 @@ type HadeApp struct {
 	configMap map[string]string // 配置加载
 }
 
+// NewHadeApp 初始化HadeApp
+func NewHadeApp(params ...interface{}) (interface{}, error) {
+	if len(params) != 2 {
+		return nil, errors.New("param error")
+	}
+
+	// 有两个参数，一个是容器，一个是baseFolder
+	container := params[0].(framework.Container)
+	baseFolder := params[1].(string)
+	return &HadeApp{baseFolder: baseFolder, container: container}, nil
+}
+
+// LoadAppConfig 加载配置map
+func (app *HadeApp) LoadAppConfig(kv map[string]string) {
+	for key, val := range kv {
+		app.configMap[key] = val
+	}
+}
+
 // Version 实现版本
 func (h HadeApp) Version() string {
 	return "0.0.3"
@@ -86,21 +105,10 @@ func (h HadeApp) TestFolder() string {
 	return filepath.Join(h.BaseFolder(), "test")
 }
 
-// NewHadeApp 初始化HadeApp
-func NewHadeApp(params ...interface{}) (interface{}, error) {
-	if len(params) != 2 {
-		return nil, errors.New("param error")
+// AppFolder 代表app目录
+func (app *HadeApp) AppFolder() string {
+	if val, ok := app.configMap["app_folder"]; ok {
+		return val
 	}
-
-	// 有两个参数，一个是容器，一个是baseFolder
-	container := params[0].(framework.Container)
-	baseFolder := params[1].(string)
-	return &HadeApp{baseFolder: baseFolder, container: container}, nil
-}
-
-// LoadAppConfig 加载配置map
-func (app *HadeApp) LoadAppConfig(kv map[string]string) {
-	for key, val := range kv {
-		app.configMap[key] = val
-	}
+	return filepath.Join(app.BaseFolder(), "app")
 }
